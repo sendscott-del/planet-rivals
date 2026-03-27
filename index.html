@@ -199,14 +199,15 @@ console.log('SUPABASE_URL:', SUPABASE_URL);
 console.log('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY);
 
 async function sbFetch(path, opts={}){
+  const {prefer, headers: extraHeaders, ...fetchOpts} = opts;
   const res = await fetch(SUPABASE_URL + path, {
-    ...opts,
+    ...fetchOpts,
     headers: {
       'apikey': SUPABASE_ANON_KEY,
       'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
       'Content-Type': 'application/json',
-      'Prefer': opts.prefer || '',
-      ...(opts.headers||{})
+      'Prefer': prefer || '',
+      ...(extraHeaders||{})
     }
   });
   if(!res.ok) throw new Error(await res.text());
