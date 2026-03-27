@@ -553,7 +553,7 @@ function loseLife(){
   // respawn: restore hp, clear enemies, continue wave
   G.respawning=true;
   G.running=false;
-  showBanner(`LIFE LOST — ${G.lives} left`, 'Respawning...');
+  showBanner(`LIFE LOST — ${G.lives} left`, 'You pooped your pants. Respawning...');
   setTimeout(()=>{
     const p=G.player;
     p.hp=p.maxHp; p.x=W/2; p.y=H/2+120;
