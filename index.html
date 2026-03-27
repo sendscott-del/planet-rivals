@@ -547,6 +547,7 @@ function loseLife(){
     G.shipFlashTimer=0; G.planetFlashTimer=0; G.playerHitTimer=60;
     G.respawning=false; G.running=true;
     updateLivesHUD();
+    requestAnimationFrame(loop);
     setTimeout(()=>startWave(G.wave), 1000);
   }, 2000);
 }
