@@ -549,6 +549,7 @@ async function doSubmit(name){
     status.style.color='#44ff88'; status.textContent='Score submitted!';
     setTimeout(goToStartScreen, 1200);
   } catch(e){
+    console.error('Score submit failed:', e.message);
     status.style.color='#ff4444'; status.textContent='Could not submit. Check your connection.';
     btn.disabled=false; btn.textContent='Submit Score';
   }
