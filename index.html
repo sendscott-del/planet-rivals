@@ -193,8 +193,10 @@ canvas { display:block; }
 // ════════════════════════════════════════════════════════
 // SUPABASE CONFIG — replace these two values
 // ════════════════════════════════════════════════════════
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://isogetmvnpimcmouakeg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzb2dldG12bnBpbWNtb3Vha2VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMTM0MzgsImV4cCI6MjA4OTc4OTQzOH0.CB3r82IblCxSiauzvChPH5ZFUZZMKgo34NLJNld53NM';
+console.log('SUPABASE_URL:', SUPABASE_URL);
+console.log('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY);
 
 async function sbFetch(path, opts={}){
   const res = await fetch(SUPABASE_URL + path, {
@@ -213,9 +215,12 @@ async function sbFetch(path, opts={}){
 
 async function fetchLeaderboard(){
   try {
+    console.log('Fetching leaderboard from:', SUPABASE_URL + '/rest/v1/leaderboard');
     const rows = await sbFetch('/rest/v1/leaderboard?select=name,score,wave&order=score.desc&limit=10');
+    console.log('Leaderboard rows:', rows);
     renderLeaderboard(rows);
   } catch(e) {
+    console.error('Leaderboard fetch failed:', e.message);
     document.getElementById('lb-loading').textContent = 'Could not load scores.';
   }
 }
