@@ -555,11 +555,14 @@ async function doSubmit(name){
   const btn = document.getElementById('submit-btn');
   if(!name){ status.textContent='Please enter a name.'; return; }
   btn.disabled=true; btn.textContent='Submitting...'; status.textContent='';
+  const timeout = setTimeout(()=>{ btn.disabled=false; btn.textContent='Submit Score'; status.style.color='#ff4444'; status.textContent='Timed out. Try again.'; }, 8000);
   try {
     await submitScore(name, _pendingScore.score, _pendingScore.wave);
+    clearTimeout(timeout);
     status.style.color='#44ff88'; status.textContent='Score submitted!';
     setTimeout(goToStartScreen, 1200);
   } catch(e){
+    clearTimeout(timeout);
     console.error('Score submit failed:', e.message);
     status.style.color='#ff4444'; status.textContent='Could not submit. Check your connection.';
     btn.disabled=false; btn.textContent='Submit Score';
