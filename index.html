@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Planet Rivals">
 <meta name="theme-color" content="#0a0a1a">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#0a0a1a; color:#fff; font-family:'Courier New',monospace; overflow:hidden; touch-action:none; }
@@ -37,6 +38,7 @@ canvas { display:block; }
 #pause-overlay { background:rgba(5,5,20,0.85); display:none; }
 #shop-overlay { background:rgba(5,5,20,0.96); display:none; overflow-y:auto; padding:20px 0; justify-content:flex-start; padding-top:32px; }
 #score-submit-overlay { background:rgba(5,5,20,0.97); display:none; }
+#lobby-overlay { background:rgba(5,5,20,0.97); display:none; }
 
 #overlay h1 { font-size:38px; color:#44aaff; text-shadow:0 0 28px #44aaff; letter-spacing:3px; margin-bottom:6px; }
 #overlay p { color:#aaa; font-size:13px; margin-bottom:8px; text-align:center; line-height:1.8; max-width:380px; }
@@ -105,6 +107,40 @@ canvas { display:block; }
 #joy-left { bottom:25px; left:25px; }
 .joy-knob { width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.18); pointer-events:none; }
 #fire-btn { position:absolute; bottom:30px; right:180px; width:64px; height:64px; border-radius:50%; background:rgba(255,80,80,0.3); border:2px solid rgba(255,80,80,0.5); font-size:20px; display:flex; align-items:center; justify-content:center; pointer-events:all; cursor:pointer; }
+
+/* ── LOBBY ── */
+#lobby-overlay h2 { font-size:28px; color:#44aaff; letter-spacing:3px; margin-bottom:16px; text-shadow:0 0 18px rgba(68,170,255,0.4); }
+.lobby-section { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:20px 28px; margin-bottom:14px; max-width:380px; width:92%; text-align:center; }
+.lobby-section h3 { font-size:13px; color:#888; letter-spacing:2px; margin-bottom:12px; }
+#lobby-name-input, #room-code-input { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:10px 16px; font-family:inherit; font-size:16px; color:#fff; width:200px; text-align:center; outline:none; letter-spacing:2px; margin-bottom:10px; }
+#lobby-name-input::placeholder, #room-code-input::placeholder { color:#444; }
+#lobby-name-input:focus, #room-code-input:focus { border-color:#44aaff; }
+.lobby-btn { background:#44aaff; color:#000; border:none; padding:10px 24px; font-size:13px; font-family:inherit; font-weight:bold; border-radius:8px; cursor:pointer; letter-spacing:1px; margin:4px; }
+.lobby-btn:hover { opacity:.88; }
+.lobby-btn.secondary { background:none; border:1px solid rgba(255,255,255,0.18); color:#888; font-weight:normal; }
+.lobby-btn.secondary:hover { background:rgba(255,255,255,0.06); }
+#room-view { display:none; }
+#room-code-display { font-size:32px; color:#ffc800; letter-spacing:6px; font-weight:bold; margin:8px 0; }
+#room-players { list-style:none; padding:0; margin:12px 0; }
+#room-players li { padding:6px 12px; margin:4px 0; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); font-size:13px; display:flex; align-items:center; gap:8px; }
+.player-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+#room-status { color:#888; font-size:12px; margin-top:8px; min-height:18px; }
+#lobby-error { color:#ff4444; font-size:12px; min-height:18px; margin-top:6px; }
+
+/* ── TEAM BLAST HUD ── */
+#team-blast-hud { display:none; position:absolute; bottom:110px; left:50%; transform:translateX(-50%); pointer-events:none; text-align:center; }
+#blast-indicator { background:rgba(0,0,0,0.75); border:2px solid rgba(255,100,50,0.5); border-radius:10px; padding:8px 18px; font-size:12px; color:#ff8844; white-space:nowrap; }
+#blast-indicator.ready { border-color:rgba(255,100,50,0.9); color:#ff6633; animation:blast-pulse 1.5s infinite; }
+#blast-indicator.cooldown { border-color:rgba(255,255,255,0.15); color:#666; }
+@keyframes blast-pulse { 0%,100%{box-shadow:0 0 8px rgba(255,100,50,0.3);} 50%{box-shadow:0 0 20px rgba(255,100,50,0.6);} }
+
+/* ── TEAM BLAST RING EFFECT ── */
+.blast-ring { position:absolute; border-radius:50%; border:4px solid #ff6633; pointer-events:none; animation:blast-expand .8s ease-out forwards; }
+@keyframes blast-expand { 0%{transform:translate(-50%,-50%) scale(0);opacity:1;} 100%{transform:translate(-50%,-50%) scale(1);opacity:0;} }
+
+/* ── TEAMMATE NAMETAGS ── */
+.mp-players-bar { position:absolute; top:80px; left:14px; display:flex; flex-direction:column; gap:4px; pointer-events:none; }
+.mp-player-tag { display:flex; align-items:center; gap:6px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:3px 10px; font-size:11px; }
 </style>
 </head>
 <body>
@@ -136,12 +172,14 @@ canvas { display:block; }
     <div class="dmg-row"><div class="dmg-dot" style="background:#ff8800"></div>Mobs touching Earth damage it</div>
     <div class="dmg-row"><div class="dmg-dot" style="background:#ff4444"></div>Mobs touching your ship hurt you</div>
   </div>
+  <div class="mp-players-bar" id="mp-players-bar"></div>
   <div id="weapon-hud">
     <div class="weap-slot active" id="ws0"><div class="wkey">1</div><div>BLASTER</div></div>
     <div class="weap-slot" id="ws1"><div class="wkey">2</div><div id="wn1">?</div></div>
     <div class="weap-slot" id="ws2"><div class="wkey">3</div><div id="wn2">?</div></div>
     <div class="weap-slot" id="ws3"><div class="wkey">4</div><div id="wn3">?</div></div>
   </div>
+  <div id="team-blast-hud"><div id="blast-indicator">TEAM BLAST [T]</div></div>
   <div id="wave-banner"><div id="wave-text"></div><div id="wave-sub"></div></div>
   <div id="toast"></div>
   <div id="controls-hint">WASD = move &nbsp;|&nbsp; Mouse = aim &nbsp;|&nbsp; Click/Space = shoot &nbsp;|&nbsp; 1-4 = weapons &nbsp;|&nbsp; Q = shop &nbsp;|&nbsp; P/Esc = pause</div>
@@ -158,6 +196,7 @@ canvas { display:block; }
     <div><b style="color:#fff">Aim &amp; Shoot</b> &nbsp;— Mouse / Click or Space</div>
     <div><b style="color:#fff">Switch Weapon</b> &nbsp;— Keys 1–4</div>
     <div><b style="color:#fff">Shop</b> &nbsp;— Q (between waves)</div>
+    <div><b style="color:#fff">Team Blast</b> &nbsp;— T (multiplayer, need 2+ nearby)</div>
     <div><b style="color:#fff">Pause</b> &nbsp;— P or Esc</div>
     <div style="margin-top:6px;color:#666;">Survive waves, collect Mo$, protect the planet. Game over if your ship <em>or</em> the planet is destroyed.</div>
   </div>
@@ -166,7 +205,10 @@ canvas { display:block; }
     <div id="lb-loading">Loading scores...</div>
     <table id="lb-list" style="display:none"></table>
   </div>
-  <button class="big-btn" id="start-btn">START GAME</button>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+    <button class="big-btn" id="start-btn">SOLO PLAY</button>
+    <button class="big-btn" id="mp-btn" style="background:#ff6633;">MULTIPLAYER</button>
+  </div>
 </div>
 
 <!-- SCORE SUBMIT (shown after game ends, before returning to start screen) -->
@@ -196,9 +238,47 @@ canvas { display:block; }
   <div id="shop-tabs">
     <button class="shop-tab active" onclick="switchTab('upgrades')">UPGRADES</button>
     <button class="shop-tab" onclick="switchTab('weapons')">WEAPONS</button>
+    <button class="shop-tab" onclick="switchTab('team')" id="team-tab-btn" style="display:none;">TEAM</button>
   </div>
   <div class="shop-items" id="shop-items"></div>
   <button id="close-shop">CLOSE &amp; RESUME</button>
+</div>
+
+<!-- LOBBY -->
+<div id="lobby-overlay" class="full-overlay">
+  <h2>MULTIPLAYER</h2>
+  <div id="lobby-menu">
+    <div class="lobby-section">
+      <h3>YOUR NAME</h3>
+      <input id="lobby-name-input" type="text" maxlength="12" placeholder="Enter name" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="lobby-section">
+      <h3>CREATE A ROOM</h3>
+      <button class="lobby-btn" id="create-room-btn">CREATE ROOM</button>
+    </div>
+    <div class="lobby-section">
+      <h3>JOIN A ROOM</h3>
+      <input id="room-code-input" type="text" maxlength="4" placeholder="CODE" autocomplete="off" spellcheck="false" style="text-transform:uppercase;">
+      <br>
+      <button class="lobby-btn" id="join-room-btn">JOIN</button>
+    </div>
+    <div id="lobby-error"></div>
+    <button class="lobby-btn secondary" id="lobby-back-btn">BACK</button>
+  </div>
+  <div id="room-view">
+    <div class="lobby-section">
+      <h3>ROOM CODE</h3>
+      <div id="room-code-display">----</div>
+      <div style="font-size:11px;color:#666;margin-top:4px;">Share this code with your team</div>
+    </div>
+    <div class="lobby-section">
+      <h3>PLAYERS</h3>
+      <ul id="room-players"></ul>
+    </div>
+    <div id="room-status">Waiting for players...</div>
+    <button class="lobby-btn" id="room-start-btn" style="display:none;">START GAME</button>
+    <button class="lobby-btn secondary" id="room-leave-btn">LEAVE ROOM</button>
+  </div>
 </div>
 
 <div id="touch-controls">
@@ -208,12 +288,10 @@ canvas { display:block; }
 
 <script>
 // ════════════════════════════════════════════════════════
-// SUPABASE CONFIG — replace these two values
+// SUPABASE CONFIG
 // ════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://isogetmvnpimcmouakeg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzb2dldG12bnBpbWNtb3Vha2VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMTM0MzgsImV4cCI6MjA4OTc4OTQzOH0.CB3r82IblCxSiauzvChPH5ZFUZZMKgo34NLJNld53NM';
-console.log('SUPABASE_URL:', SUPABASE_URL);
-console.log('SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY);
 
 async function sbFetch(path, opts={}){
   const {prefer, headers: extraHeaders, ...fetchOpts} = opts;
@@ -234,12 +312,9 @@ async function sbFetch(path, opts={}){
 
 async function fetchLeaderboard(){
   try {
-    console.log('Fetching leaderboard from:', SUPABASE_URL + '/rest/v1/leaderboard');
     const rows = await sbFetch('/rest/v1/leaderboard?select=name,score,wave&order=score.desc&limit=10');
-    console.log('Leaderboard rows:', rows);
     renderLeaderboard(rows);
   } catch(e) {
-    console.error('Leaderboard fetch failed:', e.message);
     document.getElementById('lb-loading').textContent = 'Could not load scores.';
   }
 }
@@ -273,6 +348,253 @@ async function submitScore(name, score, wave){
 function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ════════════════════════════════════════════════════════
+// SUPABASE REALTIME CLIENT
+// ════════════════════════════════════════════════════════
+let sbClient = null;
+try {
+  sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch(e) {
+  console.warn('Supabase client failed to init — multiplayer disabled:', e);
+}
+
+// ════════════════════════════════════════════════════════
+// MULTIPLAYER STATE
+// ════════════════════════════════════════════════════════
+const PLAYER_COLORS = ['#44aaff','#ff44ff','#44ff88','#ffcc00'];
+const MP = {
+  active: false,
+  isHost: false,
+  roomCode: null,
+  channel: null,
+  myId: Math.random().toString(36).slice(2,10),
+  myName: 'Player',
+  myColor: PLAYER_COLORS[0],
+  players: {},       // id -> {x, y, hp, maxHp, name, color, weapon, lastSeen}
+  teamBlastCooldown: 0,
+  teamBlastOwned: false,
+  syncFrame: 0,
+  nextEnemyId: 1,
+  hostW: 0,
+  hostH: 0,
+};
+
+function generateRoomCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let code = '';
+  for(let i=0;i<4;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}
+
+// ════════════════════════════════════════════════════════
+// ROOM MANAGEMENT
+// ════════════════════════════════════════════════════════
+function setupChannel(code){
+  if(!sbClient){ showLobbyError('Multiplayer unavailable (client failed)'); return false; }
+  MP.channel = sbClient.channel('planet-rivals-'+code, {
+    config: { broadcast: { self: false }, presence: { key: MP.myId } }
+  });
+
+  // presence sync — update player list in lobby
+  MP.channel.on('presence', { event: 'sync' }, () => {
+    const state = MP.channel.presenceState();
+    updateRoomPlayers(state);
+  });
+
+  // player position updates during game
+  MP.channel.on('broadcast', { event: 'pos' }, ({payload}) => {
+    if(!payload || payload.id === MP.myId) return;
+    MP.players[payload.id] = { ...MP.players[payload.id], ...payload, lastSeen: Date.now() };
+  });
+
+  // host broadcasts enemy state
+  MP.channel.on('broadcast', { event: 'enemies' }, ({payload}) => {
+    if(!MP.isHost && payload) {
+      syncEnemiesFromHost(payload);
+    }
+  });
+
+  // damage event from remote player
+  MP.channel.on('broadcast', { event: 'dmg' }, ({payload}) => {
+    if(MP.isHost && payload) {
+      const e = G.enemies.find(en => en.eid === payload.eid);
+      if(e) {
+        e.hp -= payload.damage;
+        e.hitFlash = 10;
+        if(payload.freeze) e.frozen = Math.min((e.frozen||0)+90, 180);
+      }
+    }
+  });
+
+  // kill event (broadcast by host)
+  MP.channel.on('broadcast', { event: 'kill' }, ({payload}) => {
+    if(!MP.isHost && payload) {
+      const idx = G.enemies.findIndex(en => en.eid === payload.eid);
+      if(idx >= 0) {
+        const e = G.enemies[idx];
+        spawnParticles(e.x, e.y, mobColor(e.type), e.type==='boss'?22:12, e.type==='boss');
+        if(e.type==='boss') playBossDeath(); else playExplosion();
+        G.enemies.splice(idx, 1);
+      }
+      G.mo += payload.mo;
+      G.score += payload.score;
+    }
+  });
+
+  // wave start (from host)
+  MP.channel.on('broadcast', { event: 'wave' }, ({payload}) => {
+    if(!MP.isHost && payload) {
+      G.wave = payload.wave;
+      G.planet = payload.planet;
+      G.waveActive = payload.active;
+      if(payload.banner) showBanner(payload.banner, payload.bannerSub||'');
+    }
+  });
+
+  // team blast triggered
+  MP.channel.on('broadcast', { event: 'blast' }, ({payload}) => {
+    if(payload) executeTeamBlastEffect(payload.x, payload.y, payload.damage);
+  });
+
+  // game start (from host)
+  MP.channel.on('broadcast', { event: 'start' }, ({payload}) => {
+    if(!MP.isHost && payload) {
+      MP.hostW = payload.W;
+      MP.hostH = payload.H;
+      startMPGame();
+    }
+  });
+
+  // game over (from host)
+  MP.channel.on('broadcast', { event: 'gameover' }, ({payload}) => {
+    if(!MP.isHost) {
+      gameOver(false);
+    }
+  });
+
+  // planet HP sync
+  MP.channel.on('broadcast', { event: 'planet' }, ({payload}) => {
+    if(!MP.isHost && payload) {
+      G.planetHp = payload.hp;
+      G.lives = payload.lives;
+    }
+  });
+
+  MP.channel.subscribe(async (status) => {
+    if(status === 'SUBSCRIBED') {
+      await MP.channel.track({
+        id: MP.myId,
+        name: MP.myName,
+        isHost: MP.isHost,
+      });
+    }
+  });
+
+  return true;
+}
+
+function createRoom(){
+  const name = document.getElementById('lobby-name-input').value.trim();
+  if(!name){ showLobbyError('Enter your name first'); return; }
+  MP.myName = name.slice(0,12);
+  MP.isHost = true;
+  MP.roomCode = generateRoomCode();
+  if(!setupChannel(MP.roomCode)) return;
+  showRoomView();
+}
+
+function joinRoom(){
+  const name = document.getElementById('lobby-name-input').value.trim();
+  if(!name){ showLobbyError('Enter your name first'); return; }
+  const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+  if(code.length !== 4){ showLobbyError('Enter a 4-letter room code'); return; }
+  MP.myName = name.slice(0,12);
+  MP.isHost = false;
+  MP.roomCode = code;
+  if(!setupChannel(code)) return;
+  showRoomView();
+}
+
+function leaveRoom(){
+  if(MP.channel){
+    MP.channel.untrack();
+    MP.channel.unsubscribe();
+    MP.channel = null;
+  }
+  MP.active = false;
+  MP.isHost = false;
+  MP.roomCode = null;
+  MP.players = {};
+  document.getElementById('room-view').style.display='none';
+  document.getElementById('lobby-menu').style.display='flex';
+}
+
+function showRoomView(){
+  document.getElementById('lobby-menu').style.display='none';
+  document.getElementById('room-view').style.display='flex';
+  document.getElementById('room-code-display').textContent = MP.roomCode;
+  document.getElementById('room-start-btn').style.display = MP.isHost ? 'inline-block' : 'none';
+  document.getElementById('room-status').textContent = MP.isHost ? 'You are the host. Waiting for players...' : 'Waiting for host to start...';
+}
+
+function updateRoomPlayers(state){
+  const ul = document.getElementById('room-players');
+  const entries = Object.values(state).flat();
+  ul.innerHTML = entries.map((p, i) => {
+    const col = PLAYER_COLORS[i % PLAYER_COLORS.length];
+    const host = p.isHost ? ' (HOST)' : '';
+    const you = p.id === MP.myId ? ' (YOU)' : '';
+    return `<li><div class="player-dot" style="background:${col}"></div>${escHtml(p.name)}${host}${you}</li>`;
+  }).join('');
+
+  // Assign colors based on order
+  entries.forEach((p, i) => {
+    if(p.id === MP.myId) MP.myColor = PLAYER_COLORS[i % PLAYER_COLORS.length];
+  });
+
+  // Update player count
+  const count = entries.length;
+  if(MP.isHost){
+    document.getElementById('room-status').textContent = count < 2
+      ? `${count}/4 players — need at least 2 to start`
+      : `${count}/4 players — ready!`;
+    document.getElementById('room-start-btn').style.display = count >= 2 ? 'inline-block' : 'none';
+  }
+}
+
+function showLobbyError(msg){
+  const el = document.getElementById('lobby-error');
+  el.textContent = msg;
+  setTimeout(()=>el.textContent='', 3000);
+}
+
+function hostStartGame(){
+  if(!MP.isHost) return;
+  MP.active = true;
+  MP.hostW = canvas.width;
+  MP.hostH = canvas.height;
+  MP.channel.send({ type:'broadcast', event:'start', payload:{ W: canvas.width, H: canvas.height } });
+  startMPGame();
+}
+
+function startMPGame(){
+  document.getElementById('lobby-overlay').style.display='none';
+  document.getElementById('overlay').style.display='none';
+  MP.active = true;
+  MP.teamBlastCooldown = 0;
+  MP.teamBlastOwned = false;
+  resetGame();
+  // show team tab in shop
+  document.getElementById('team-tab-btn').style.display = 'inline-block';
+  // show team blast HUD (hidden until purchased)
+  document.getElementById('team-blast-hud').style.display = 'none';
+  // update controls hint
+  document.getElementById('controls-hint').textContent = 'WASD = move | Mouse = aim | Click/Space = shoot | 1-4 = weapons | T = team blast | Q = shop | P/Esc = pause';
+  G.running = true;
+  if(MP.isHost) startWave(1);
+  requestAnimationFrame(loop);
+}
+
+// ════════════════════════════════════════════════════════
 // PERSISTENT Mo$ — localStorage per browser
 // ════════════════════════════════════════════════════════
 const MAX_LIVES = 5;
@@ -300,6 +622,18 @@ function playWave(){ resumeAC(); [300,400,550].forEach((f,i)=>{ const o=AC.creat
 function playPlayerHit(){ resumeAC(); const o=AC.createOscillator(),g=AC.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(150,AC.currentTime); o.connect(g); g.connect(AC.destination); g.gain.setValueAtTime(0.18,AC.currentTime); g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.15); o.start(); o.stop(AC.currentTime+0.15); }
 function playBossDeath(){ resumeAC(); [800,600,400,200,100].forEach((f,i)=>{ const o=AC.createOscillator(),g=AC.createGain(); o.type='sawtooth'; o.frequency.value=f; o.connect(g); g.connect(AC.destination); const t=AC.currentTime+i*0.08; g.gain.setValueAtTime(0.22,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2); o.start(t); o.stop(t+0.2); }); }
 function playRegenTick(){ resumeAC(); const o=AC.createOscillator(),g=AC.createGain(); o.type='sine'; o.frequency.value=880; o.connect(g); g.connect(AC.destination); g.gain.setValueAtTime(0.04,AC.currentTime); g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.05); o.start(); o.stop(AC.currentTime+0.05); }
+function playTeamBlast(){
+  resumeAC();
+  // deep bass boom + rising tone
+  const t = AC.currentTime;
+  // bass hit
+  const buf=AC.createBuffer(1,AC.sampleRate*0.6,AC.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.5)*1.5;
+  const src=AC.createBufferSource(),gn=AC.createGain(); src.buffer=buf; src.connect(gn); gn.connect(AC.destination);
+  gn.gain.setValueAtTime(0.5,t); gn.gain.exponentialRampToValueAtTime(0.001,t+0.6); src.start(t); src.stop(t+0.6);
+  // rising tone
+  [150,200,300,450,600].forEach((f,i)=>{ const o=AC.createOscillator(),g=AC.createGain(); o.type='sawtooth'; o.frequency.value=f; o.connect(g); g.connect(AC.destination); const st=t+i*0.06; g.gain.setValueAtTime(0.15,st); g.gain.exponentialRampToValueAtTime(0.001,st+0.15); o.start(st); o.stop(st+0.15); });
+}
 
 // ════════════════════════════════════════════════════════
 // WEAPONS & UPGRADES
@@ -331,6 +665,9 @@ const WEAPON_SHOP=[
   {id:'rocket',  icon:'🟡', name:'ROCKET',   desc:'Explodes on impact!',       cost:350},
   {id:'freeze',  icon:'🔷', name:'FREEZER',  desc:'Shots slow all mobs',       cost:250},
 ];
+const TEAM_SHOP=[
+  {id:'teamblast', icon:'💣', name:'TEAM BLAST', desc:'Gather near teammates & press T. One-shots tanks, two-shots bosses. 60s cooldown.', cost:500, owned:()=>MP.teamBlastOwned, buy:()=>{ MP.teamBlastOwned=true; document.getElementById('team-blast-hud').style.display='block'; updateBlastHUD(); }},
+];
 
 // ════════════════════════════════════════════════════════
 // GAME STATE
@@ -338,7 +675,7 @@ const WEAPON_SHOP=[
 const canvas=document.getElementById('c');
 const ctx=canvas.getContext('2d');
 canvas.width=window.innerWidth; canvas.height=window.innerHeight;
-const W=canvas.width, H=canvas.height;
+let W=canvas.width, H=canvas.height;
 
 const G={
   running:false, paused:false,
@@ -352,6 +689,7 @@ const G={
   shootHeld:false, joystick:{x:0,y:0},
   noHitTimer:0, regenTickTimer:0,
   planetFlashTimer:0, shipFlashTimer:0,
+  blastRings:[], // visual blast ring effects
 };
 function activeWeapon(){ return WEAPONS[G.ownedWeapons[G.curWeapon]||0]; }
 
@@ -383,7 +721,14 @@ function closeShop(){
   document.getElementById('pause-btn').textContent='⏸ PAUSE';
   if(G.running) requestAnimationFrame(loop);
 }
-function switchTab(t){ shopTab=t; document.querySelectorAll('.shop-tab').forEach(e=>e.classList.toggle('active',e.textContent.toLowerCase().includes(t.slice(0,6)))); renderShop(); }
+function switchTab(t){
+  shopTab=t;
+  document.querySelectorAll('.shop-tab').forEach(e=>{
+    const tabName = e.textContent.trim().toLowerCase();
+    e.classList.toggle('active', tabName===t || (t==='upgrades' && tabName==='upgrades') || (t==='weapons' && tabName==='weapons') || (t==='team' && tabName==='team'));
+  });
+  renderShop();
+}
 function renderShop(){
   const el=document.getElementById('shop-items'); el.innerHTML='';
   if(shopTab==='upgrades'){
@@ -396,7 +741,7 @@ function renderShop(){
       if(!maxed) div.onclick=()=>buyUpgrade(u,cost);
       el.appendChild(div);
     });
-  } else {
+  } else if(shopTab==='weapons'){
     WEAPON_SHOP.forEach(w=>{
       const wi=WEAPONS.findIndex(x=>x.id===w.id), owned=G.ownedWeapons.includes(wi);
       const div=document.createElement('div');
@@ -405,10 +750,20 @@ function renderShop(){
       if(!owned) div.onclick=()=>buyWeapon(w,wi);
       el.appendChild(div);
     });
+  } else if(shopTab==='team'){
+    TEAM_SHOP.forEach(ts=>{
+      const owned = ts.owned();
+      const div=document.createElement('div');
+      div.className='shop-item'+(owned?' maxed':'');
+      div.innerHTML=`<div class="sicon">${ts.icon}</div><div class="sname">${ts.name}</div><div class="sdesc">${ts.desc}</div><div class="scost">${owned?'OWNED':('Mo$ '+ts.cost)}</div>`;
+      if(!owned) div.onclick=()=>buyTeamUpgrade(ts);
+      el.appendChild(div);
+    });
   }
 }
 function buyUpgrade(u,cost){ if(G.mo<cost){showToast('Need more Mo$!');return;} G.mo-=cost; G.upgLevels[u.id]=(G.upgLevels[u.id]||0)+1; u.apply(G.player); playUpgrade(); showToast(`${u.name} upgraded!`); renderShop(); }
 function buyWeapon(w,wi){ if(G.mo<w.cost){showToast('Need more Mo$!');return;} G.mo-=w.cost; G.ownedWeapons.push(wi); playUpgrade(); showToast(`${w.name} unlocked!`); updateWeaponHUD(); renderShop(); }
+function buyTeamUpgrade(ts){ if(G.mo<ts.cost){showToast('Need more Mo$!');return;} G.mo-=ts.cost; ts.buy(); playUpgrade(); showToast(`${ts.name} unlocked!`); renderShop(); }
 function updateWeaponHUD(){ for(let i=0;i<4;i++){ const sl=document.getElementById('ws'+i); const wi=G.ownedWeapons[i]; if(wi===undefined){sl.style.display='none';continue;} sl.style.display='block'; sl.classList.toggle('active',i===G.curWeapon); const nm=sl.querySelector('div:last-child'); if(nm) nm.textContent=WEAPONS[wi].name; } }
 
 // ════════════════════════════════════════════════════════
@@ -427,7 +782,7 @@ function shoot(){
     const spread=(i-(w.bullets-1)/2)*w.spread;
     const ang=baseAng+spread+(Math.random()-0.5)*0.04;
     const dmg=calcDmg(w.damage*(p.dmgMult||1));
-    G.bullets.push({x:p.x,y:p.y,vx:Math.cos(ang)*w.bulletSpd,vy:Math.sin(ang)*w.bulletSpd,damage:dmg.val,crit:dmg.crit,pierce:w.pierce,hitList:[],color:w.color,size:w.size,type:w.type,life:130});
+    G.bullets.push({x:p.x,y:p.y,vx:Math.cos(ang)*w.bulletSpd,vy:Math.sin(ang)*w.bulletSpd,damage:dmg.val,crit:dmg.crit,pierce:w.pierce,hitList:[],color:w.color,size:w.size,type:w.type,life:130,local:true});
   }
 }
 function calcDmg(base){ const crit=Math.random()<(G.player.critChance||0); return {val:crit?base*3:base,crit}; }
@@ -447,7 +802,7 @@ function spawnEnemy(wave,isBoss){
   const spdMult=1+(G.planet-1)*0.2;
   const rewMult=1+(G.planet-1)*0.75;
   const cfg={normal:{hp:Math.round(40*sc),spd:Math.min((0.85+wave*0.05)*spdMult,3.5),size:14,reward:Math.round(10*rewMult),dmg:8},fast:{hp:Math.round(24*sc),spd:Math.min((1.8+wave*0.07)*spdMult,5.0),size:10,reward:Math.round(15*rewMult),dmg:6},tank:{hp:Math.round(110*sc),spd:Math.min((0.45+wave*0.03)*spdMult,2.0),size:24,reward:Math.round(28*rewMult),dmg:16},boss:{hp:Math.round(520*sc),spd:Math.min((0.8+wave*0.05)*spdMult,3.0),size:38,reward:Math.round(200*rewMult),dmg:30},exploder:{hp:Math.round(32*sc),spd:Math.min((1.3+wave*0.07)*spdMult,4.5),size:13,reward:Math.round(18*rewMult),dmg:45}}[type];
-  return {x,y,type,maxHp:cfg.hp,hp:cfg.hp,spd:cfg.spd,size:cfg.size,reward:cfg.reward,dmg:cfg.dmg,angle:0,hitFlash:0,frozen:0};
+  return {eid:MP.nextEnemyId++, x,y,type,maxHp:cfg.hp,hp:cfg.hp,spd:cfg.spd,size:cfg.size,reward:cfg.reward,dmg:cfg.dmg,angle:0,hitFlash:0,frozen:0};
 }
 const MAX_WAVES=10;
 const PLANET_NAMES=['','Earth','Mars','Jupiter','Kepler-22b','Gliese 667C','Proxima b','HD 40307g','Tau Ceti e'];
@@ -460,16 +815,116 @@ function nextPlanet(){
   const name=PLANET_NAMES[G.planet]||`Planet ${G.planet}`;
   showBanner(`${name.toUpperCase()} ATTACKS!`,`Planet ${G.planet} — mobs are stronger & worth more Mo$!`);
   document.getElementById('planet-num').textContent=G.planet;
+  if(MP.active && MP.isHost){
+    MP.channel.send({type:'broadcast',event:'wave',payload:{wave:1,planet:G.planet,active:false,banner:`${name.toUpperCase()} ATTACKS!`,bannerSub:`Planet ${G.planet} — mobs are stronger & worth more Mo$!`}});
+  }
   setTimeout(()=>startWave(1), 3000);
 }
 function startWave(n){
+  // Only host spawns enemies in multiplayer
+  if(MP.active && !MP.isHost) return;
   const isBossWave=n%5===0;
   const count=isBossWave?1:5+(n-1)*2;
   G.enemiesLeft=count; G.waveActive=true;
   playWave();
-  showBanner(isBossWave?`BOSS WAVE ${n}!`:`WAVE ${n}`,isBossWave?'A titan approaches!!':`${count} mobs incoming!`);
+  const bannerText = isBossWave?`BOSS WAVE ${n}!`:`WAVE ${n}`;
+  const bannerSub = isBossWave?'A titan approaches!!':`${count} mobs incoming!`;
+  showBanner(bannerText, bannerSub);
+  if(MP.active && MP.isHost){
+    MP.channel.send({type:'broadcast',event:'wave',payload:{wave:n,planet:G.planet,active:true,banner:bannerText,bannerSub}});
+  }
   let spawned=0;
   const iv=setInterval(()=>{ if(spawned<count&&G.running){G.enemies.push(spawnEnemy(n,isBossWave&&spawned===0));spawned++;} else clearInterval(iv); },isBossWave?0:520);
+}
+
+// ════════════════════════════════════════════════════════
+// TEAM BLAST
+// ════════════════════════════════════════════════════════
+const TEAM_BLAST_COOLDOWN = 3600; // 60 seconds at 60fps
+const TEAM_BLAST_RADIUS = 280;
+const TEAM_BLAST_PROXIMITY = 200; // players must be within this distance
+
+function tryTeamBlast(){
+  if(!MP.active || !MP.teamBlastOwned) { showToast('Buy Team Blast in the shop first!'); return; }
+  if(MP.teamBlastCooldown > 0) { showToast(`Team Blast cooling down: ${Math.ceil(MP.teamBlastCooldown/60)}s`); return; }
+
+  // Check if at least 2 players (including self) are within proximity
+  const p = G.player;
+  const nearbyPlayers = [{ x:p.x, y:p.y }];
+  Object.values(MP.players).forEach(rp => {
+    if(Date.now() - rp.lastSeen < 3000) {
+      const d = Math.hypot(rp.x - p.x, rp.y - p.y);
+      if(d < TEAM_BLAST_PROXIMITY) nearbyPlayers.push({ x:rp.x, y:rp.y });
+    }
+  });
+
+  if(nearbyPlayers.length < 2) {
+    showToast('Need 2+ players nearby for Team Blast!');
+    return;
+  }
+
+  // Calculate center of all nearby players
+  const cx = nearbyPlayers.reduce((s,p)=>s+p.x, 0) / nearbyPlayers.length;
+  const cy = nearbyPlayers.reduce((s,p)=>s+p.y, 0) / nearbyPlayers.length;
+
+  // Start cooldown
+  MP.teamBlastCooldown = TEAM_BLAST_COOLDOWN;
+
+  // Calculate damage: one-shot tanks (use 99999 for non-bosses), 55% of boss maxHP
+  // We'll compute per-enemy in the effect function
+  executeTeamBlastEffect(cx, cy, true);
+
+  // Broadcast to other players
+  if(MP.channel){
+    MP.channel.send({type:'broadcast', event:'blast', payload:{ x:cx, y:cy, damage:true }});
+  }
+}
+
+function executeTeamBlastEffect(cx, cy, applyDamage){
+  playTeamBlast();
+  // Visual: massive expanding ring
+  G.blastRings.push({ x:cx, y:cy, r:0, maxR:TEAM_BLAST_RADIUS, life:1 });
+  // Particles
+  spawnParticles(cx, cy, '#ff6633', 40, true);
+  spawnParticles(cx, cy, '#ffaa00', 30, true);
+  spawnParticles(cx, cy, '#ffffff', 20, true);
+
+  if(applyDamage){
+    // Apply damage to all enemies in radius
+    for(let i=G.enemies.length-1; i>=0; i--){
+      const e = G.enemies[i];
+      const d = Math.hypot(e.x - cx, e.y - cy);
+      if(d < TEAM_BLAST_RADIUS + e.size){
+        if(e.type === 'boss'){
+          // Two-shot bosses: deal 55% of max HP
+          e.hp -= e.maxHp * 0.55;
+          e.hitFlash = 20;
+          spawnFloat(e.x, e.y-15, 'TEAM BLAST!', '#ff6633');
+          if(e.hp <= 0) killEnemy(i);
+        } else {
+          // One-shot everything else
+          e.hp = 0;
+          killEnemy(i);
+        }
+      }
+    }
+  }
+
+  showBanner('TEAM BLAST!', 'Massive damage!');
+}
+
+function updateBlastHUD(){
+  const el = document.getElementById('blast-indicator');
+  const hud = document.getElementById('team-blast-hud');
+  if(!MP.active || !MP.teamBlastOwned){ hud.style.display='none'; return; }
+  hud.style.display='block';
+  if(MP.teamBlastCooldown > 0){
+    el.className='cooldown';
+    el.textContent = `TEAM BLAST [T] — ${Math.ceil(MP.teamBlastCooldown/60)}s`;
+  } else {
+    el.className='ready';
+    el.textContent = 'TEAM BLAST [T] — READY!';
+  }
 }
 
 // ════════════════════════════════════════════════════════
@@ -493,10 +948,77 @@ function killEnemy(i){
   if(G.player.killHeal>0) G.player.hp=Math.min(G.player.maxHp,G.player.hp+G.player.killHeal);
   spawnParticles(e.x,e.y,mobColor(e.type),(e.type==='boss'||e.type==='tank')?22:12,e.type==='boss'||e.type==='tank');
   if(e.type==='boss') playBossDeath(); else playExplosion();
-  if(e.type==='exploder'){ for(let j=0;j<8;j++){ const a=j/8*Math.PI*2; G.bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*5,vy:Math.sin(a)*5,damage:22,crit:false,pierce:0,hitList:[],color:'#ffcc00',size:5,type:'exploder',life:40}); } playExplosion(); }
+  if(e.type==='exploder'){ for(let j=0;j<8;j++){ const a=j/8*Math.PI*2; G.bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*5,vy:Math.sin(a)*5,damage:22,crit:false,pierce:0,hitList:[],color:'#ffcc00',size:5,type:'exploder',life:40,local:true}); } playExplosion(); }
+
+  // In multiplayer, host broadcasts kill event
+  if(MP.active && MP.isHost && MP.channel){
+    MP.channel.send({type:'broadcast', event:'kill', payload:{eid:e.eid, mo, score:e.reward*5}});
+  }
+
   G.enemies.splice(i,1);
   G.enemiesLeft=Math.max(0,G.enemiesLeft-1);
-  if(G.enemiesLeft<=0&&G.enemies.length===0){ G.waveActive=false; if(G.wave>=MAX_WAVES){setTimeout(()=>nextPlanet(),1800);return;} G.wave++; setTimeout(()=>startWave(G.wave),2200); }
+  if(MP.isHost || !MP.active){
+    if(G.enemiesLeft<=0&&G.enemies.length===0){ G.waveActive=false; if(G.wave>=MAX_WAVES){setTimeout(()=>nextPlanet(),1800);return;} G.wave++; setTimeout(()=>startWave(G.wave),2200); }
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// MULTIPLAYER SYNC
+// ════════════════════════════════════════════════════════
+function syncEnemiesFromHost(data){
+  if(!data || !data.list) return;
+  // Map received enemy data to local enemies array
+  const received = data.list;
+  const localMap = {};
+  G.enemies.forEach(e => localMap[e.eid] = e);
+
+  const newEnemies = [];
+  received.forEach(re => {
+    const existing = localMap[re.eid];
+    if(existing){
+      // Update position and HP from host
+      existing.x = re.x;
+      existing.y = re.y;
+      existing.hp = re.hp;
+      existing.maxHp = re.mhp;
+      existing.frozen = re.fr || 0;
+      newEnemies.push(existing);
+    } else {
+      // New enemy from host
+      newEnemies.push({
+        eid: re.eid, x: re.x, y: re.y, type: re.t,
+        maxHp: re.mhp, hp: re.hp, spd: re.spd, size: re.sz,
+        reward: re.rw, dmg: re.dmg, angle: 0, hitFlash: 0, frozen: re.fr || 0
+      });
+    }
+  });
+  G.enemies = newEnemies;
+}
+
+function broadcastEnemyState(){
+  if(!MP.isHost || !MP.channel) return;
+  const list = G.enemies.map(e => ({
+    eid:e.eid, x:Math.round(e.x), y:Math.round(e.y), hp:Math.round(e.hp),
+    mhp:e.maxHp, t:e.type, spd:e.spd, sz:e.size, rw:e.reward, dmg:e.dmg, fr:e.frozen
+  }));
+  MP.channel.send({type:'broadcast', event:'enemies', payload:{list}});
+}
+
+function broadcastMyPosition(){
+  if(!MP.channel) return;
+  const p = G.player;
+  const w = activeWeapon();
+  MP.channel.send({type:'broadcast', event:'pos', payload:{
+    id: MP.myId, name: MP.myName, color: MP.myColor,
+    x: Math.round(p.x), y: Math.round(p.y),
+    hp: Math.round(p.hp), maxHp: p.maxHp,
+    weapon: w.color, angle: Math.atan2(G.mouseY-p.y, G.mouseX-p.x)
+  }});
+}
+
+function broadcastPlanetState(){
+  if(!MP.isHost || !MP.channel) return;
+  MP.channel.send({type:'broadcast', event:'planet', payload:{ hp:G.planetHp, lives:G.lives }});
 }
 
 // ════════════════════════════════════════════════════════
@@ -517,15 +1039,62 @@ function drawPlanet(){
 }
 function drawPlayer(){
   const p=G.player, ang=Math.atan2(G.mouseY-p.y,G.mouseX-p.x);
-  ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
-  if(G.shipFlashTimer>0&&G.shipFlashTimer%4<2) ctx.globalAlpha=0.35;
-  else if(G.playerHitTimer>0) ctx.globalAlpha=0.7;
-  ctx.beginPath(); ctx.moveTo(16,0); ctx.lineTo(-11,-10); ctx.lineTo(-7,0); ctx.lineTo(-11,10); ctx.closePath();
-  ctx.fillStyle='#44aaff'; ctx.fill(); ctx.strokeStyle='#88ccff'; ctx.lineWidth=1.5; ctx.stroke();
-  ctx.fillStyle='#cceeff'; ctx.beginPath(); ctx.arc(4,0,4,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle=activeWeapon().color; ctx.fillRect(10,-2,8,4);
-  ctx.globalAlpha=1; ctx.restore();
+  drawShip(p.x, p.y, ang, MP.active ? MP.myColor : '#44aaff', G.shipFlashTimer, G.playerHitTimer);
   if(G.shipFlashTimer>0) G.shipFlashTimer--;
+}
+function drawShip(x, y, ang, color, flashTimer, hitTimer){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(ang);
+  if(flashTimer>0&&flashTimer%4<2) ctx.globalAlpha=0.35;
+  else if(hitTimer>0) ctx.globalAlpha=0.7;
+  ctx.beginPath(); ctx.moveTo(16,0); ctx.lineTo(-11,-10); ctx.lineTo(-7,0); ctx.lineTo(-11,10); ctx.closePath();
+  ctx.fillStyle=color; ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.fillStyle='#cceeff'; ctx.beginPath(); ctx.arc(4,0,4,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=color; ctx.fillRect(10,-2,8,4);
+  ctx.globalAlpha=1; ctx.restore();
+}
+function drawTeammates(){
+  if(!MP.active) return;
+  const bar = document.getElementById('mp-players-bar');
+  let barHTML = '';
+  Object.values(MP.players).forEach(rp => {
+    if(Date.now() - rp.lastSeen > 5000) return; // stale player
+    // Draw their ship
+    drawShip(rp.x, rp.y, rp.angle || 0, rp.color || '#ff44ff', 0, 0);
+    // Draw nametag
+    ctx.save();
+    ctx.font = '10px Courier New';
+    ctx.fillStyle = rp.color || '#ff44ff';
+    ctx.textAlign = 'center';
+    ctx.fillText(rp.name || '???', rp.x, rp.y - 22);
+    // HP bar
+    const bw=30, bh=3, bx=rp.x-bw/2, by=rp.y-18;
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle=rp.color||'#44ff88'; ctx.fillRect(bx,by,bw*(rp.hp/(rp.maxHp||100)),bh);
+    ctx.restore();
+    barHTML += `<div class="mp-player-tag"><div class="player-dot" style="background:${rp.color||'#ff44ff'}"></div>${escHtml(rp.name||'???')}</div>`;
+  });
+  bar.innerHTML = barHTML;
+}
+function drawBlastRings(){
+  G.blastRings = G.blastRings.filter(ring => {
+    ring.life -= 0.025;
+    ring.r = ring.maxR * (1 - ring.life);
+    if(ring.life <= 0) return false;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(ring.x, ring.y, ring.r, 0, Math.PI*2);
+    ctx.strokeStyle = `rgba(255,102,51,${ring.life})`;
+    ctx.lineWidth = 6 * ring.life;
+    ctx.stroke();
+    // inner glow
+    ctx.beginPath();
+    ctx.arc(ring.x, ring.y, ring.r * 0.7, 0, Math.PI*2);
+    ctx.strokeStyle = `rgba(255,170,0,${ring.life*0.5})`;
+    ctx.lineWidth = 10 * ring.life;
+    ctx.stroke();
+    ctx.restore();
+    return true;
+  });
 }
 function drawEnemy(e){
   ctx.save(); ctx.translate(e.x,e.y);
@@ -556,7 +1125,6 @@ function loseLife(){
   if(G.respawning) return;
   G.lives--;
   if(G.lives<=0){ gameOver(false); return; }
-  // respawn: restore hp, clear enemies, continue wave
   G.respawning=true;
   G.running=false;
   showBanner(`LIFE LOST — ${G.lives} left`, 'You pooped your pants. Respawning...');
@@ -570,7 +1138,7 @@ function loseLife(){
     G.respawning=false; G.running=true;
     updateLivesHUD();
     requestAnimationFrame(loop);
-    setTimeout(()=>startWave(G.wave), 1000);
+    if(MP.isHost || !MP.active) setTimeout(()=>startWave(G.wave), 1000);
   }, 2000);
 }
 
@@ -580,15 +1148,21 @@ function updateLivesHUD(){
 
 function gameOver(win){
   G.running=false;
+  // In MP, host broadcasts game over
+  if(MP.active && MP.isHost && MP.channel){
+    MP.channel.send({type:'broadcast', event:'gameover', payload:{}});
+  }
   const ss = document.getElementById('score-submit-overlay');
   document.getElementById('ss-title').textContent = win ? 'YOU WIN! 🎉' : 'GAME OVER';
   document.getElementById('ss-title').style.color = win ? '#44ff88' : '#ff4444';
   document.getElementById('ss-score').textContent = `Score: ${G.score.toLocaleString()} | Planet ${G.planet} | Wave ${G.wave}`;
   document.getElementById('ss-mo-info').textContent = win ? `Mo$ earned: ${G.mo.toLocaleString()}` : 'All Mo$ lost!';
   document.getElementById('submit-status').textContent='';
-  document.getElementById('name-input').value='';
+  document.getElementById('name-input').value = MP.active ? MP.myName : '';
   _pendingScore = { score: G.score, wave: G.wave };
   ss.style.display='flex';
+  // Clean up MP
+  if(MP.active) leaveRoom();
 }
 
 async function doSubmit(name){
@@ -617,8 +1191,7 @@ function goToStartScreen(){
   document.getElementById('overlay-title').style.color='#44aaff';
   document.getElementById('overlay-desc').textContent='Mobs are invading Earth!\nProtect your ship AND the planet.\nCollect Mo$, buy weapons & upgrades, save humanity!';
   document.getElementById('saved-mo-info').textContent = '';
-  document.getElementById('start-btn').textContent='PLAY AGAIN';
-  // reload leaderboard
+  document.getElementById('start-btn').textContent='SOLO PLAY';
   document.getElementById('lb-loading').style.display='block';
   document.getElementById('lb-loading').textContent='Loading scores...';
   document.getElementById('lb-list').style.display='none';
@@ -630,14 +1203,17 @@ function resetGame(){
   const p=G.player;
   p.x=W/2; p.y=H/2+120; p.hp=100; p.maxHp=100;
   p.speed=3; p.dmgMult=1; p.fRateMult=1; p.regen=0; p.defense=0; p.moMult=1; p.critChance=0; p.killHeal=0; p.lastShot=0;
-  G.bullets=[]; G.enemies=[]; G.particles=[]; G.floaters=[];
+  G.bullets=[]; G.enemies=[]; G.particles=[]; G.floaters=[]; G.blastRings=[];
   G.wave=1; G.planet=1; G.mo=0; G.score=0; G.waveActive=false; G.lives=MAX_LIVES; G.respawning=false;
   G.curWeapon=0; G.ownedWeapons=[0]; G.upgLevels={};
   G.playerHitTimer=0; G.earthDefense=0;
   G.planetHp=100; G.noHitTimer=0; G.regenTickTimer=0;
   G.planetFlashTimer=0; G.shipFlashTimer=0;
   G.paused=false; G.shootHeld=false; G.keys={};
+  MP.teamBlastCooldown=0; MP.teamBlastOwned=false; MP.nextEnemyId=1; MP.players={};
   document.getElementById('pause-btn').textContent='⏸ PAUSE';
+  document.getElementById('team-blast-hud').style.display='none';
+  document.getElementById('mp-players-bar').innerHTML='';
   updateWeaponHUD();
 }
 
@@ -657,6 +1233,7 @@ function updateHUD(){
   document.getElementById('mo-num').textContent=G.mo;
   document.getElementById('score-num').textContent=G.score;
   updateLivesHUD();
+  if(MP.active) updateBlastHUD();
 }
 function showBanner(text,sub){ const wt=document.getElementById('wave-text'),ws=document.getElementById('wave-sub'); wt.textContent=text; ws.textContent=sub; wt.style.opacity=1; ws.style.opacity=1; setTimeout(()=>{wt.style.opacity=0;ws.style.opacity=0;},2400); }
 let toastTimer;
@@ -684,6 +1261,25 @@ function loop(){
   if(G.playerHitTimer>0) G.playerHitTimer--;
   if(G.keys[' ']||G.shootHeld) shoot();
 
+  // Team blast cooldown
+  if(MP.teamBlastCooldown > 0) MP.teamBlastCooldown--;
+
+  // Multiplayer sync
+  if(MP.active){
+    MP.syncFrame++;
+    if(MP.syncFrame % 6 === 0) {
+      broadcastMyPosition();
+      if(MP.isHost) {
+        broadcastEnemyState();
+        broadcastPlanetState();
+      }
+    }
+    // Prune stale players
+    Object.keys(MP.players).forEach(id => {
+      if(Date.now() - MP.players[id].lastSeen > 10000) delete MP.players[id];
+    });
+  }
+
   const rocketExplode=[];
   G.bullets=G.bullets.filter(b=>{
     b.x+=b.vx; b.y+=b.vy; b.life--;
@@ -700,7 +1296,12 @@ function loop(){
         if(b.type==='rocket'){rocketExplode.push({x:b.x,y:b.y,dmg:b.damage});b.life=0;return false;}
         e.hp-=b.damage; if(b.type==='freeze') e.frozen=Math.min((e.frozen||0)+90,180);
         e.hitFlash=10; if(b.crit) spawnFloat(e.x,e.y-10,'CRIT!','#ffff00');
-        playHit(); b.hitList.push(i); if(e.hp<=0) killEnemy(i);
+        playHit(); b.hitList.push(i);
+        // In MP as non-host, send damage to host
+        if(MP.active && !MP.isHost && b.local && MP.channel){
+          MP.channel.send({type:'broadcast', event:'dmg', payload:{eid:e.eid, damage:b.damage, freeze:b.type==='freeze'}});
+        }
+        if(e.hp<=0) killEnemy(i);
         if(b.pierce<=0||b.hitList.length>b.pierce) return false;
       }
     }
@@ -708,18 +1309,46 @@ function loop(){
   });
   rocketExplode.forEach(r=>explodeAt(r.x,r.y,r.dmg));
 
+  // Enemy movement (host or solo only; non-host uses synced positions)
   let gotHit=false;
-  G.enemies.forEach(e=>{
-    const spd=e.frozen>0?e.spd*0.25:e.spd; if(e.frozen>0) e.frozen--;
-    const dx=p.x-e.x, dy=p.y-e.y, d=Math.hypot(dx,dy)||1;
-    e.x+=(dx/d)*spd; e.y+=(dy/d)*spd;
-    const planetDist=Math.hypot(e.x-W/2,e.y-H/2);
-    if(planetDist<62){ G.planetHp-=e.dmg*0.06*(1-(G.earthDefense||0)); G.planetFlashTimer=12; gotHit=true; if(G.planetHp<=0){loseLife();return;} }
-    if(d<18+e.size){ const dmg=e.dmg*0.03*(1-(p.defense||0)); p.hp-=dmg; G.shipFlashTimer=8; gotHit=true; if(G.playerHitTimer===0){playPlayerHit();G.playerHitTimer=25;} if(p.hp<=0){loseLife();return;} }
-    drawEnemy(e);
-  });
+  if(!MP.active || MP.isHost){
+    G.enemies.forEach(e=>{
+      const spd=e.frozen>0?e.spd*0.25:e.spd; if(e.frozen>0) e.frozen--;
+      // In multiplayer, chase nearest player
+      let targetX = p.x, targetY = p.y;
+      if(MP.active){
+        let minDist = Math.hypot(p.x - e.x, p.y - e.y);
+        Object.values(MP.players).forEach(rp => {
+          if(Date.now() - rp.lastSeen > 3000) return;
+          const rd = Math.hypot(rp.x - e.x, rp.y - e.y);
+          if(rd < minDist){ minDist = rd; targetX = rp.x; targetY = rp.y; }
+        });
+      }
+      const dx=targetX-e.x, dy=targetY-e.y, dd=Math.hypot(dx,dy)||1;
+      e.x+=(dx/dd)*spd; e.y+=(dy/dd)*spd;
+      const planetDist=Math.hypot(e.x-W/2,e.y-H/2);
+      if(planetDist<62){ G.planetHp-=e.dmg*0.06*(1-(G.earthDefense||0)); G.planetFlashTimer=12; gotHit=true; if(G.planetHp<=0){loseLife();return;} }
+      const pDist=Math.hypot(e.x-p.x,e.y-p.y);
+      if(pDist<18+e.size){ const dmg=e.dmg*0.03*(1-(p.defense||0)); p.hp-=dmg; G.shipFlashTimer=8; gotHit=true; if(G.playerHitTimer===0){playPlayerHit();G.playerHitTimer=25;} if(p.hp<=0){loseLife();return;} }
+      drawEnemy(e);
+    });
+  } else {
+    // Non-host: just draw enemies (positions come from host sync) and check player collision
+    G.enemies.forEach(e=>{
+      if(e.frozen>0) e.frozen--;
+      const planetDist=Math.hypot(e.x-W/2,e.y-H/2);
+      if(planetDist<62){ G.planetFlashTimer=12; gotHit=true; }
+      const pDist=Math.hypot(e.x-p.x,e.y-p.y);
+      if(pDist<18+e.size){ const dmg=e.dmg*0.03*(1-(p.defense||0)); p.hp-=dmg; G.shipFlashTimer=8; gotHit=true; if(G.playerHitTimer===0){playPlayerHit();G.playerHitTimer=25;} if(p.hp<=0){loseLife();return;} }
+      drawEnemy(e);
+    });
+  }
   if(gotHit) G.noHitTimer=0;
+
+  drawTeammates();
   drawPlayer();
+  drawBlastRings();
+
   G.particles=G.particles.filter(pt=>{ pt.x+=pt.vx; pt.y+=pt.vy; pt.life-=0.035; if(pt.life<=0) return false; ctx.globalAlpha=pt.life; ctx.fillStyle=pt.color; ctx.fillRect(pt.x,pt.y,pt.size,pt.size); ctx.globalAlpha=1; return true; });
   G.floaters=G.floaters.filter(f=>{ f.y+=f.vy; f.life-=0.022; if(f.life<=0) return false; ctx.globalAlpha=f.life; ctx.fillStyle=f.color; ctx.font='bold 12px Courier New'; ctx.fillText(f.text,f.x,f.y); ctx.globalAlpha=1; return true; });
   updateHUD();
@@ -730,9 +1359,33 @@ function loop(){
 // ════════════════════════════════════════════════════════
 document.getElementById('start-btn').onclick=()=>{
   resumeAC(); resetGame();
+  MP.active = false;
   document.getElementById('overlay').style.display='none';
+  document.getElementById('team-tab-btn').style.display='none';
+  document.getElementById('controls-hint').textContent='WASD = move | Mouse = aim | Click/Space = shoot | 1-4 = weapons | Q = shop | P/Esc = pause';
   G.running=true; startWave(1); requestAnimationFrame(loop);
 };
+document.getElementById('mp-btn').onclick=()=>{
+  if(!sbClient){ showToast('Multiplayer unavailable — Supabase client failed to load'); return; }
+  document.getElementById('overlay').style.display='none';
+  document.getElementById('lobby-overlay').style.display='flex';
+  document.getElementById('lobby-menu').style.display='flex';
+  document.getElementById('room-view').style.display='none';
+};
+document.getElementById('create-room-btn').onclick=createRoom;
+document.getElementById('join-room-btn').onclick=joinRoom;
+document.getElementById('room-code-input').addEventListener('keydown',e=>{ if(e.key==='Enter') joinRoom(); });
+document.getElementById('lobby-back-btn').onclick=()=>{
+  leaveRoom();
+  document.getElementById('lobby-overlay').style.display='none';
+  document.getElementById('overlay').style.display='flex';
+};
+document.getElementById('room-leave-btn').onclick=()=>{
+  leaveRoom();
+  document.getElementById('room-view').style.display='none';
+  document.getElementById('lobby-menu').style.display='flex';
+};
+document.getElementById('room-start-btn').onclick=hostStartGame;
 document.getElementById('submit-btn').onclick=()=>doSubmit(document.getElementById('name-input').value.trim());
 document.getElementById('name-input').addEventListener('keydown',e=>{ if(e.key==='Enter') doSubmit(document.getElementById('name-input').value.trim()); });
 document.getElementById('skip-btn').onclick=goToStartScreen;
@@ -750,6 +1403,7 @@ document.addEventListener('keydown',e=>{
   if(e.key===' '){e.preventDefault();resumeAC();shoot();}
   if(e.key==='p'||e.key==='P'||e.key==='Escape') togglePause();
   if(e.key==='q'||e.key==='Q') openShop();
+  if(e.key==='t'||e.key==='T') tryTeamBlast();
   if(e.key==='1'&&G.ownedWeapons.length>=1){G.curWeapon=0;updateWeaponHUD();}
   if(e.key==='2'&&G.ownedWeapons.length>=2){G.curWeapon=1;updateWeaponHUD();}
   if(e.key==='3'&&G.ownedWeapons.length>=3){G.curWeapon=2;updateWeaponHUD();}
@@ -778,7 +1432,7 @@ if('ontouchstart' in window){
   fireBtn.addEventListener('touchstart',e=>{e.preventDefault();resumeAC();G.shootHeld=true;shoot();},{passive:false});
   fireBtn.addEventListener('touchend',()=>G.shootHeld=false);
 }
-window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
+window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; W=canvas.width; H=canvas.height; });
 </script>
 </body>
 </html>
