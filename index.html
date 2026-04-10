@@ -67,8 +67,8 @@ canvas { display:block; }
 #name-input::placeholder { color:#444; }
 #name-input:focus { border-color:#44aaff; }
 .submit-row { display:flex; gap:10px; margin-bottom:8px; }
-#skip-btn { background:none; border:1px solid rgba(255,255,255,0.15); color:#666; padding:11px 22px; font-family:inherit; font-size:13px; border-radius:8px; cursor:pointer; }
-#skip-btn:hover { background:rgba(255,255,255,0.06); }
+#skip-btn { background:none; border:1px solid rgba(255,255,255,0.25); color:#aaa; padding:11px 22px; font-family:inherit; font-size:13px; border-radius:8px; cursor:pointer; }
+#skip-btn:hover, #skip-btn:active { background:rgba(255,255,255,0.1); color:#fff; }
 #submit-status { font-size:12px; color:#888; min-height:18px; }
 
 #pause-overlay h2 { font-size:36px; color:#fff; letter-spacing:4px; margin-bottom:12px; }
@@ -342,25 +342,35 @@ const SUPABASE_URL = 'https://isogetmvnpimcmouakeg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzb2dldG12bnBpbWNtb3Vha2VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMTM0MzgsImV4cCI6MjA4OTc4OTQzOH0.CB3r82IblCxSiauzvChPH5ZFUZZMKgo34NLJNld53NM';
 
 async function sbFetch(path, opts={}){
-  const {prefer, headers: extraHeaders, ...fetchOpts} = opts;
-  const res = await fetch(SUPABASE_URL + path, {
-    ...fetchOpts,
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': prefer || '',
-      ...(extraHeaders||{})
-    }
-  });
-  if(!res.ok) throw new Error(await res.text());
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
+  const {prefer, headers: extraHeaders, timeoutMs, ...fetchOpts} = opts;
+  const controller = new AbortController();
+  const timer = timeoutMs ? setTimeout(()=>controller.abort(), timeoutMs) : null;
+  try {
+    const res = await fetch(SUPABASE_URL + path, {
+      ...fetchOpts,
+      signal: controller.signal,
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+        ...(prefer ? {'Prefer': prefer} : {}),
+        ...(extraHeaders||{})
+      }
+    });
+    if(timer) clearTimeout(timer);
+    if(!res.ok) throw new Error(await res.text());
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  } catch(e) {
+    if(timer) clearTimeout(timer);
+    if(e.name === 'AbortError') throw new Error('Request timed out');
+    throw e;
+  }
 }
 
 async function fetchLeaderboard(){
   try {
-    const rows = await sbFetch('/rest/v1/leaderboard?select=name,score,wave&order=score.desc&limit=10');
+    const rows = await sbFetch('/rest/v1/leaderboard?select=name,score,wave&order=score.desc&limit=10', {timeoutMs: 5000});
     renderLeaderboard(rows);
   } catch(e) {
     document.getElementById('lb-loading').textContent = 'Could not load scores.';
@@ -389,6 +399,7 @@ async function submitScore(name, score, wave){
   await sbFetch('/rest/v1/leaderboard', {
     method: 'POST',
     prefer: 'return=minimal',
+    timeoutMs: 6000,
     body: JSON.stringify({ name: name.trim().slice(0,16), score, wave })
   });
 }
@@ -1213,22 +1224,24 @@ function gameOver(win){
   if(MP.active) leaveRoom();
 }
 
+let _submitting = false;
 async function doSubmit(name){
   const status = document.getElementById('submit-status');
   const btn = document.getElementById('submit-btn');
   if(!name){ status.textContent='Please enter a name.'; return; }
+  if(_submitting) return;
+  _submitting = true;
   btn.disabled=true; btn.textContent='Submitting...'; status.textContent='';
-  const timeout = setTimeout(()=>{ btn.disabled=false; btn.textContent='Submit Score'; status.style.color='#ff4444'; status.textContent='Timed out. Try again.'; }, 8000);
   try {
     await submitScore(name, _pendingScore.score, _pendingScore.wave);
-    clearTimeout(timeout);
     status.style.color='#44ff88'; status.textContent='Score submitted!';
-    setTimeout(goToStartScreen, 1200);
+    _submitting = false;
+    setTimeout(goToStartScreen, 1000);
   } catch(e){
-    clearTimeout(timeout);
     console.error('Score submit failed:', e.message);
-    status.style.color='#ff4444'; status.textContent='Could not submit. Check your connection.';
-    btn.disabled=false; btn.textContent='Submit Score';
+    status.style.color='#ff4444'; status.textContent='Failed: ' + (e.message||'Check connection') + '. Tap Skip to continue.';
+    btn.disabled=false; btn.textContent='Try Again';
+    _submitting = false;
   }
 }
 
