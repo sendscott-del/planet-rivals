@@ -5,15 +5,25 @@ Planet Rivals is a browser-based wave shooter where you defend Earth from alien 
 
 ## Controls
 
-| Action | Keyboard | Mobile |
-|--------|----------|--------|
-| Move | WASD or Arrow Keys | Left joystick |
-| Aim | Mouse | Touch right side of screen |
-| Shoot | Click or Space | Fire button |
-| Switch Weapon | 1-4 | — |
-| Open Shop | Q | — |
-| Pause | P or Esc | — |
-| Team Blast | T (multiplayer) | — |
+### Desktop
+| Action | Control |
+|--------|---------|
+| Move | WASD or Arrow Keys |
+| Aim & Shoot | Mouse to aim, Click or Space to shoot |
+| Switch Weapon | Keys 1-4 |
+| Open Shop | Q |
+| Pause | P or Esc |
+| Team Blast | T (multiplayer) |
+
+### Mobile (Touch)
+| Action | Control |
+|--------|---------|
+| Move | Left joystick |
+| Aim & Shoot | Right joystick (auto-fires while held) |
+| Switch Weapon | Tap weapon name bar above joysticks |
+| Open Shop | Tap SHOP button |
+| Pause | Tap PAUSE button |
+| Team Blast | Not yet available on mobile |
 
 ## Game Modes
 

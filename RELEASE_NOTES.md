@@ -1,5 +1,19 @@
 # Planet Rivals — Release Notes
 
+## v2.1.0 — Mobile Overhaul (2026-04-09)
+
+### Mobile Improvements
+- **Dual joystick controls**: Left stick for movement, right stick for aim + auto-shoot
+- **Mobile weapon bar**: Tap weapon names above joysticks to switch weapons
+- **Mobile shop/pause buttons**: Accessible above the joystick area
+- **Compact mobile HUD**: Smaller stat boxes and hidden desktop-only elements (damage legend, keyboard hints)
+- **Responsive overlays**: All screens (start, shop, lobby, score submit) now scroll properly on small screens
+- **Mobile-specific instructions**: How To Play section shows touch control info on phones
+- **Media queries**: Optimized layout at 768px and 480px breakpoints
+- **Better touch handling**: Proper multi-touch separation, canvas touch prevention for no-scroll gameplay
+
+---
+
 ## v2.0.0 — Multiplayer Update (2026-04-09)
 
 ### New Features

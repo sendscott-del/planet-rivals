@@ -34,11 +34,11 @@ canvas { display:block; }
 
 /* ── OVERLAYS ── */
 .full-overlay { position:absolute; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:all; }
-#overlay { background:rgba(5,5,20,0.93); }
+#overlay { background:rgba(5,5,20,0.93); overflow-y:auto; -webkit-overflow-scrolling:touch; }
 #pause-overlay { background:rgba(5,5,20,0.85); display:none; }
 #shop-overlay { background:rgba(5,5,20,0.96); display:none; overflow-y:auto; padding:20px 0; justify-content:flex-start; padding-top:32px; }
-#score-submit-overlay { background:rgba(5,5,20,0.97); display:none; }
-#lobby-overlay { background:rgba(5,5,20,0.97); display:none; }
+#score-submit-overlay { background:rgba(5,5,20,0.97); display:none; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+#lobby-overlay { background:rgba(5,5,20,0.97); display:none; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 
 #overlay h1 { font-size:38px; color:#44aaff; text-shadow:0 0 28px #44aaff; letter-spacing:3px; margin-bottom:6px; }
 #overlay p { color:#aaa; font-size:13px; margin-bottom:8px; text-align:center; line-height:1.8; max-width:380px; }
@@ -102,11 +102,54 @@ canvas { display:block; }
 #dmg-legend { position:absolute; top:90px; right:14px; display:flex; flex-direction:column; gap:6px; pointer-events:none; }
 .dmg-row { display:flex; align-items:center; gap:7px; background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:4px 9px; font-size:10px; color:#aaa; }
 .dmg-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
-#touch-controls { position:absolute; bottom:0; left:0; width:100%; height:180px; display:none; pointer-events:none; }
-.joy-zone { position:absolute; width:130px; height:130px; border-radius:50%; background:rgba(255,255,255,0.04); border:1.5px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; pointer-events:all; }
-#joy-left { bottom:25px; left:25px; }
-.joy-knob { width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.18); pointer-events:none; }
-#fire-btn { position:absolute; bottom:30px; right:180px; width:64px; height:64px; border-radius:50%; background:rgba(255,80,80,0.3); border:2px solid rgba(255,80,80,0.5); font-size:20px; display:flex; align-items:center; justify-content:center; pointer-events:all; cursor:pointer; }
+#touch-controls { position:absolute; bottom:0; left:0; width:100%; height:200px; display:none; pointer-events:none; z-index:10; }
+.joy-zone { position:absolute; width:140px; height:140px; border-radius:50%; background:rgba(255,255,255,0.06); border:2px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; pointer-events:all; }
+#joy-left { bottom:20px; left:20px; }
+#joy-right { bottom:20px; right:20px; }
+.joy-knob { width:50px; height:50px; border-radius:50%; background:rgba(255,255,255,0.22); pointer-events:none; }
+#joy-right .joy-knob { background:rgba(255,80,80,0.35); }
+.joy-label { position:absolute; top:-18px; width:100%; text-align:center; font-size:10px; color:rgba(255,255,255,0.3); pointer-events:none; }
+#mobile-btns { position:absolute; bottom:170px; left:50%; transform:translateX(-50%); display:flex; gap:10px; pointer-events:all; }
+#mobile-btns button { background:rgba(0,0,0,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:8px 14px; font-size:11px; font-family:inherit; color:#aaa; cursor:pointer; }
+#mobile-btns button:active { background:rgba(255,255,255,0.1); }
+#mobile-weap-bar { position:absolute; bottom:168px; left:50%; transform:translateX(-50%); display:flex; gap:6px; pointer-events:all; }
+.mobile-weap { background:rgba(0,0,0,0.7); border:1.5px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 12px; font-size:11px; color:#888; text-align:center; pointer-events:all; cursor:pointer; min-width:55px; }
+.mobile-weap.active { border-color:#44aaff; color:#44aaff; background:rgba(68,170,255,0.15); }
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 768px) {
+  #hud { padding:6px 8px; gap:4px; }
+  .stat { padding:3px 7px; font-size:10px; border-radius:6px; }
+  .stat span { font-size:8px; }
+  .stat b { font-size:12px; }
+  #hp-bar, #planet-hp-bar { width:70px; height:5px; }
+  #dmg-legend { display:none; }
+  #weapon-hud { display:none; }
+  #controls-hint { display:none; }
+  #wave-text { font-size:24px; }
+  #wave-sub { font-size:11px; }
+  #toast { bottom:210px; font-size:11px; }
+  #team-blast-hud { bottom:210px; }
+  .full-overlay { overflow-y:auto; -webkit-overflow-scrolling:touch; padding:20px 10px; justify-content:flex-start; padding-top:40px; }
+  #overlay h1 { font-size:28px; }
+  #overlay p { font-size:12px; }
+  .big-btn { padding:12px 28px; font-size:14px; }
+  .shop-items { grid-template-columns:1fr; max-width:320px; }
+  .shop-item { padding:10px; }
+  #leaderboard-wrap { width:280px; }
+  .lobby-section { padding:14px 18px; }
+  #blast-indicator { font-size:11px; padding:6px 14px; }
+}
+@media (max-width: 480px) {
+  .stat { padding:2px 5px; }
+  .stat b { font-size:11px; }
+  #hp-bar, #planet-hp-bar { width:50px; }
+  #hud-btns { gap:4px; }
+  #shop-btn, #pause-btn { padding:4px 8px; font-size:10px; }
+  #overlay h1 { font-size:22px; }
+  .lobby-section { padding:12px 14px; }
+  #lobby-name-input, #room-code-input { width:160px; font-size:14px; }
+}
 
 /* ── LOBBY ── */
 #lobby-overlay h2 { font-size:28px; color:#44aaff; letter-spacing:3px; margin-bottom:16px; text-shadow:0 0 18px rgba(68,170,255,0.4); }
@@ -192,12 +235,12 @@ canvas { display:block; }
   <div id="saved-mo-info"></div>
   <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 20px;margin-bottom:16px;max-width:340px;width:92%;font-size:11px;color:#aaa;line-height:1.9;text-align:left;">
     <div style="color:#44aaff;font-size:11px;letter-spacing:2px;margin-bottom:6px;text-align:center;">HOW TO PLAY</div>
-    <div><b style="color:#fff">Move</b> &nbsp;— WASD or Arrow Keys</div>
-    <div><b style="color:#fff">Aim &amp; Shoot</b> &nbsp;— Mouse / Click or Space</div>
-    <div><b style="color:#fff">Switch Weapon</b> &nbsp;— Keys 1–4</div>
-    <div><b style="color:#fff">Shop</b> &nbsp;— Q (between waves)</div>
+    <div id="ctrl-move"><b style="color:#fff">Move</b> &nbsp;— WASD or Arrow Keys</div>
+    <div id="ctrl-aim"><b style="color:#fff">Aim &amp; Shoot</b> &nbsp;— Mouse / Click or Space</div>
+    <div id="ctrl-weap"><b style="color:#fff">Switch Weapon</b> &nbsp;— Keys 1–4</div>
+    <div id="ctrl-shop"><b style="color:#fff">Shop</b> &nbsp;— Q (between waves)</div>
     <div><b style="color:#fff">Team Blast</b> &nbsp;— T (multiplayer, need 2+ nearby)</div>
-    <div><b style="color:#fff">Pause</b> &nbsp;— P or Esc</div>
+    <div id="ctrl-pause"><b style="color:#fff">Pause</b> &nbsp;— P or Esc</div>
     <div style="margin-top:6px;color:#666;">Survive waves, collect Mo$, protect the planet. Game over if your ship <em>or</em> the planet is destroyed.</div>
   </div>
   <div id="leaderboard-wrap">
@@ -282,8 +325,13 @@ canvas { display:block; }
 </div>
 
 <div id="touch-controls">
-  <div class="joy-zone" id="joy-left"><div class="joy-knob" id="joy-knob-l"></div></div>
-  <div id="fire-btn">🔥</div>
+  <div id="mobile-weap-bar"></div>
+  <div id="mobile-btns">
+    <button id="m-shop-btn">🛒 SHOP</button>
+    <button id="m-pause-btn">⏸ PAUSE</button>
+  </div>
+  <div class="joy-zone" id="joy-left"><div class="joy-label">MOVE</div><div class="joy-knob" id="joy-knob-l"></div></div>
+  <div class="joy-zone" id="joy-right"><div class="joy-label">AIM+FIRE</div><div class="joy-knob" id="joy-knob-r"></div></div>
 </div>
 
 <script>
@@ -1417,20 +1465,133 @@ document.addEventListener('keyup',e=>G.keys[e.key]=false);
 document.getElementById('saved-mo-info').textContent = '';
 fetchLeaderboard();
 
+// Mobile-specific instructions
+if('ontouchstart' in window || navigator.maxTouchPoints > 0){
+  const cm=document.getElementById('ctrl-move'); if(cm) cm.innerHTML='<b style="color:#fff">Move</b> &nbsp;— Left joystick';
+  const ca=document.getElementById('ctrl-aim'); if(ca) ca.innerHTML='<b style="color:#fff">Aim &amp; Shoot</b> &nbsp;— Right joystick (auto-fires)';
+  const cw=document.getElementById('ctrl-weap'); if(cw) cw.innerHTML='<b style="color:#fff">Switch Weapon</b> &nbsp;— Tap weapon bar above joysticks';
+  const cs=document.getElementById('ctrl-shop'); if(cs) cs.innerHTML='<b style="color:#fff">Shop</b> &nbsp;— Tap SHOP button';
+  const cp=document.getElementById('ctrl-pause'); if(cp) cp.innerHTML='<b style="color:#fff">Pause</b> &nbsp;— Tap PAUSE button';
+}
+
 // ════════════════════════════════════════════════════════
-// TOUCH
+// TOUCH — dual joystick, mobile weapons, mobile buttons
 // ════════════════════════════════════════════════════════
-if('ontouchstart' in window){
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+if(isTouchDevice){
   document.getElementById('touch-controls').style.display='block';
-  document.getElementById('controls-hint').textContent='Left stick = move | Tap right = aim/shoot | Fire button = shoot';
+  document.getElementById('controls-hint').style.display='none';
+  document.getElementById('weapon-hud').style.display='none';
+  document.getElementById('dmg-legend').style.display='none';
+
   const joyL=document.getElementById('joy-left'), knobL=document.getElementById('joy-knob-l');
-  const fireBtn=document.getElementById('fire-btn');
-  let joyTouchId=null, joyOrigin={x:0,y:0};
-  joyL.addEventListener('touchstart',e=>{ const t=e.touches[0]; joyTouchId=t.identifier; const r=joyL.getBoundingClientRect(); joyOrigin={x:r.left+r.width/2,y:r.top+r.height/2}; },{passive:true});
-  document.addEventListener('touchmove',e=>{ for(const t of e.touches){ if(t.identifier===joyTouchId){ const dx=t.clientX-joyOrigin.x,dy=t.clientY-joyOrigin.y,dist=Math.hypot(dx,dy),maxR=45; const nx=dx/Math.max(dist,maxR),ny=dy/Math.max(dist,maxR); G.joystick.x=nx; G.joystick.y=ny; knobL.style.transform=`translate(${nx*maxR}px,${ny*maxR}px)`; } else { const r=canvas.getBoundingClientRect(); G.mouseX=t.clientX-r.left; G.mouseY=t.clientY-r.top; } } },{passive:true});
-  document.addEventListener('touchend',e=>{ for(const t of e.changedTouches){ if(t.identifier===joyTouchId){G.joystick.x=0;G.joystick.y=0;joyTouchId=null;knobL.style.transform='';} } });
-  fireBtn.addEventListener('touchstart',e=>{e.preventDefault();resumeAC();G.shootHeld=true;shoot();},{passive:false});
-  fireBtn.addEventListener('touchend',()=>G.shootHeld=false);
+  const joyR=document.getElementById('joy-right'), knobR=document.getElementById('joy-knob-r');
+  let leftTouchId=null, leftOrigin={x:0,y:0};
+  let rightTouchId=null, rightOrigin={x:0,y:0};
+  let rightAimAngle=0, rightActive=false;
+
+  // --- Left joystick (movement) ---
+  joyL.addEventListener('touchstart',e=>{
+    e.preventDefault(); resumeAC();
+    for(const t of e.changedTouches){
+      if(leftTouchId===null){
+        leftTouchId=t.identifier;
+        const r=joyL.getBoundingClientRect();
+        leftOrigin={x:r.left+r.width/2, y:r.top+r.height/2};
+      }
+    }
+  },{passive:false});
+
+  // --- Right joystick (aim + auto-shoot) ---
+  joyR.addEventListener('touchstart',e=>{
+    e.preventDefault(); resumeAC();
+    for(const t of e.changedTouches){
+      if(rightTouchId===null){
+        rightTouchId=t.identifier;
+        const r=joyR.getBoundingClientRect();
+        rightOrigin={x:r.left+r.width/2, y:r.top+r.height/2};
+        rightActive=true;
+        G.shootHeld=true;
+      }
+    }
+  },{passive:false});
+
+  document.addEventListener('touchmove',e=>{
+    for(const t of e.changedTouches){
+      if(t.identifier===leftTouchId){
+        const dx=t.clientX-leftOrigin.x, dy=t.clientY-leftOrigin.y;
+        const dist=Math.hypot(dx,dy), maxR=50;
+        const nx=dx/Math.max(dist,maxR), ny=dy/Math.max(dist,maxR);
+        G.joystick.x=nx; G.joystick.y=ny;
+        const clampD=Math.min(dist,maxR);
+        knobL.style.transform=`translate(${(dx/Math.max(dist,1))*clampD}px,${(dy/Math.max(dist,1))*clampD}px)`;
+      }
+      if(t.identifier===rightTouchId){
+        const dx=t.clientX-rightOrigin.x, dy=t.clientY-rightOrigin.y;
+        const dist=Math.hypot(dx,dy), maxR=50;
+        if(dist>8){
+          rightAimAngle=Math.atan2(dy,dx);
+          // Set mouse position far in aim direction from player
+          G.mouseX=G.player.x+Math.cos(rightAimAngle)*500;
+          G.mouseY=G.player.y+Math.sin(rightAimAngle)*500;
+          rightActive=true;
+          G.shootHeld=true;
+        }
+        const clampD=Math.min(dist,maxR);
+        knobR.style.transform=`translate(${(dx/Math.max(dist,1))*clampD}px,${(dy/Math.max(dist,1))*clampD}px)`;
+      }
+    }
+  },{passive:true});
+
+  document.addEventListener('touchend',e=>{
+    for(const t of e.changedTouches){
+      if(t.identifier===leftTouchId){
+        G.joystick.x=0; G.joystick.y=0;
+        leftTouchId=null;
+        knobL.style.transform='';
+      }
+      if(t.identifier===rightTouchId){
+        rightTouchId=null;
+        rightActive=false;
+        G.shootHeld=false;
+        knobR.style.transform='';
+      }
+    }
+  });
+
+  // --- Mobile weapon bar ---
+  function updateMobileWeapons(){
+    const bar=document.getElementById('mobile-weap-bar');
+    bar.innerHTML='';
+    G.ownedWeapons.forEach((wi,i)=>{
+      const w=WEAPONS[wi];
+      const btn=document.createElement('div');
+      btn.className='mobile-weap'+(i===G.curWeapon?' active':'');
+      btn.textContent=w.name;
+      btn.addEventListener('touchstart',ev=>{
+        ev.preventDefault(); ev.stopPropagation();
+        G.curWeapon=i;
+        updateWeaponHUD();
+        updateMobileWeapons();
+      },{passive:false});
+      bar.appendChild(btn);
+    });
+  }
+  // Hook into weapon changes
+  const _origUpdateWeaponHUD = updateWeaponHUD;
+  updateWeaponHUD = function(){
+    _origUpdateWeaponHUD();
+    if(isTouchDevice) updateMobileWeapons();
+  };
+  updateMobileWeapons();
+
+  // --- Mobile buttons ---
+  document.getElementById('m-shop-btn').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();openShop();},{passive:false});
+  document.getElementById('m-pause-btn').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();togglePause();},{passive:false});
+
+  // Prevent default on canvas to avoid scrolling
+  canvas.addEventListener('touchstart',e=>{ e.preventDefault(); resumeAC(); },{passive:false});
+  canvas.addEventListener('touchmove',e=>{ e.preventDefault(); },{passive:false});
 }
 window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; W=canvas.width; H=canvas.height; });
 </script>
